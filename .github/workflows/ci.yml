@@ -8,7 +8,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - run: npm install
       - run: npm run build
   rust:
@@ -19,5 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: cargo fmt --check
+      - run: cargo fmt --all
       - run: cargo check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
