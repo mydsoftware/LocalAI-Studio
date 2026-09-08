@@ -1,0 +1,5 @@
+use serde::{Deserialize,Serialize};
+#[derive(Debug,Clone,Serialize,Deserialize)]pub struct InferenceConfig{pub context_length:u32,pub gpu_layers:i32,pub threads:u32,pub batch_size:u32,pub temperature:f32,pub top_p:f32,pub top_k:u32,pub repeat_penalty:f32,pub flash_attention:bool,pub cpu_offload:bool}
+impl Default for InferenceConfig{fn default()->Self{Self{context_length:4096,gpu_layers:-1,threads:0,batch_size:512,temperature:0.7,top_p:0.9,top_k:40,repeat_penalty:1.1,flash_attention:true,cpu_offload:false}}}
+#[derive(Debug,Clone,Serialize)]pub struct InstallationPlan{pub model:String,pub variant:String,pub runtime:String,pub backend:String,pub estimated_download_size:u64,pub estimated_memory:u64,pub warnings:Vec<String>}
+pub fn create_install_plan(model:String,variant:String,ram:u64,vram:u64)->InstallationPlan{let mem=5*1024*1024*1024;let mut w=Vec::new();if ram<vram.saturating_add(mem){w.push("حافظه برای این پیکربندی ممکن است کافی نباشد.".into())}InstallationPlan{model,variant,runtime:"llama.cpp".into(),backend:if vram>0{"GPU".into()}else{"CPU".into()},estimated_download_size:mem,estimated_memory:mem,warnings:w}}
