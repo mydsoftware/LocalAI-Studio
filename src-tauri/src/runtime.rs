@@ -1,0 +1,3 @@
+use std::path::{Path,PathBuf};use std::process::{Child,Command};use std::sync::Mutex;
+pub struct LlamaCppRuntime{pub binary:Option<PathBuf>,pub child:Mutex<Option<Child>>}
+impl LlamaCppRuntime{pub fn detect()->Option<PathBuf>{let names=if cfg!(windows){vec!["llama-cli.exe","llama-server.exe"]}else{vec!["llama-cli","llama-server"]};for n in names{if let Some(p)=which::which(n).ok(){return Some(p)}}None}pub fn command(&self,model:&Path,cfg:&crate::core::InferenceConfig)->Option<Command>{let bin=self.binary.as_ref()?.clone();let mut c=Command::new(bin);c.arg("-m").arg(model).arg("-c").arg(cfg.context_length.to_string()).arg("-ngl").arg(cfg.gpu_layers.to_string()).arg("-t").arg(cfg.threads.to_string()).arg("--temp").arg(cfg.temperature.to_string());Some(c)}}
