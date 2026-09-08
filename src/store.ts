@@ -1,0 +1,4 @@
+import{create}from'zustand';
+export type Model={id:string,name:string,task:string,quant:string,size:string,score:number};
+type State={page:string,setPage:(p:string)=>void,hardware:{cpu:string,ram:string,gpu:string,backend:string},models:Model[],running:string,scan:()=>void,run:(name:string)=>void};
+export const useStudio=create<State>((set,get)=>({page:'dashboard',setPage:page=>set({page}),hardware:{cpu:'در حال شناسایی…',ram:'در حال شناسایی…',gpu:'در حال شناسایی…',backend:'در حال شناسایی…'},models:[{id:'qwen3-8b',name:'Qwen3 8B',task:'گفتگو / استدلال',quant:'Q4_K_M',size:'≈ 5 GB',score:96},{id:'llama-3.1-8b',name:'Llama 3.1 8B',task:'گفتگو / کدنویسی',quant:'Q4_K_M',size:'≈ 5 GB',score:94},{id:'qwen2.5-coder-7b',name:'Qwen2.5 Coder 7B',task:'کدنویسی',quant:'Q4_K_M',size:'≈ 4.7 GB',score:92}],running:'',scan:()=>set({hardware:{cpu:'CPU سیستم',ram:'RAM سیستم',gpu:'GPU سیستم',backend:'CPU / GPU خودکار'}}),run:name=>set({running:name})}));
