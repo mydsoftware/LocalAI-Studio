@@ -1,5 +1,6 @@
 name: CI
 on: [push, pull_request]
+
 jobs:
   frontend:
     runs-on: ubuntu-latest
@@ -10,6 +11,7 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+
   rust:
     runs-on: ubuntu-latest
     defaults:
@@ -17,7 +19,14 @@ jobs:
         working-directory: src-tauri
     steps:
       - uses: actions/checkout@v4
+      - name: Install Tauri Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        working-directory: .
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
       - run: cargo fmt --all
       - run: cargo check
       - run: cargo clippy --all-targets --all-features -- -D warnings
