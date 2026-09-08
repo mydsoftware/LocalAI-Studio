@@ -1,0 +1,1 @@
+{"$schema":"../gen/schemas/desktop-schema.json","identifier":"default","description":"دسترسی‌های پایه LocalAI Studio","windows":["main"],"permissions":["core:default"]}
