@@ -5,7 +5,7 @@ mod recommendation;
 mod runtime;
 mod storage;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Child;
@@ -21,6 +21,22 @@ struct AppState {
 struct RunningModel {
     id: String,
     pid: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ChatMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChatChoice {
+    message: ChatMessage,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChatResponse {
+    choices: Vec<ChatChoice>,
 }
 
 #[tauri::command]
@@ -124,6 +140,35 @@ fn stop_model(model_path: String, state: State<AppState>) -> Result<bool, String
     Ok(false)
 }
 
+#[tauri::command]
+fn chat_completion(messages: Vec<ChatMessage>) -> Result<String, String> {
+    if messages.is_empty() {
+        return Err("حداقل یک پیام لازم است.".into());
+    }
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(180))
+        .build()
+        .map_err(|e| format!("ساخت کلاینت گفتگو ناموفق بود: {e}"))?;
+    let response = client
+        .post("http://127.0.0.1:1234/v1/chat/completions")
+        .json(&serde_json::json!({
+            "model": "local-model",
+            "messages": messages,
+            "stream": false
+        }))
+        .send()
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| format!("Runtime پاسخ نداد: {e}"))?;
+    let body: ChatResponse = response
+        .json()
+        .map_err(|e| format!("پاسخ Runtime قابل خواندن نیست: {e}"))?;
+    body.choices
+        .into_iter()
+        .next()
+        .map(|c| c.message.content)
+        .ok_or_else(|| "Runtime پاسخ متنی برنگرداند.".to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(AppState::default())
@@ -145,7 +190,8 @@ fn main() {
             runtime_status,
             running_models,
             start_model,
-            stop_model
+            stop_model,
+            chat_completion
         ])
         .run(tauri::generate_context!())
         .expect("اجرای LocalAI Studio ناموفق بود");
