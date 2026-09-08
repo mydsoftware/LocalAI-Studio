@@ -1,0 +1,3 @@
+export type HubModel={id:string,author?:string,downloads?:number,likes?:number,tags?:string[],lastModified?:string};
+export async function searchHuggingFace(query:string,limit=20):Promise<HubModel[]>{const u=new URL('https://huggingface.co/api/models');u.searchParams.set('search',query);u.searchParams.set('limit',String(limit));u.searchParams.set('sort','downloads');const r=await fetch(u);if(!r.ok)throw new Error(`جستجوی Hugging Face ناموفق بود: ${r.status}`);return r.json()}
+export async function modelInfo(id:string){const r=await fetch(`https://huggingface.co/api/models/${encodeURIComponent(id)}`);if(!r.ok)throw new Error('اطلاعات مدل دریافت نشد');return r.json()}
