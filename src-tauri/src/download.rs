@@ -1,16 +1,17 @@
 use reqwest::blocking::Client;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::fs::{self, File};
-use std::io::{Read, Write};
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DownloadResult {
     pub path: String,
     pub bytes: u64,
     pub sha256: String,
+    pub resumed: bool,
 }
 
 fn safe_destination(destination: &Path) -> Result<PathBuf, String> {
@@ -24,6 +25,18 @@ fn safe_destination(destination: &Path) -> Result<PathBuf, String> {
     Ok(destination.to_path_buf())
 }
 
+fn sha256_file(path: &Path) -> Result<String, String> {
+    let mut file = File::open(path).map_err(|e| format!("بازکردن فایل برای اعتبارسنجی ناموفق بود: {e}"))?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 1024 * 1024];
+    loop {
+        let read = file.read(&mut buffer).map_err(|e| format!("خواندن فایل برای SHA-256 ناموفق بود: {e}"))?;
+        if read == 0 { break; }
+        hasher.update(&buffer[..read]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
 pub fn download(
     url: &str,
     destination: &Path,
@@ -32,51 +45,74 @@ pub fn download(
     if !(url.starts_with("https://") || url.starts_with("http://")) {
         return Err("فقط URLهای HTTP/HTTPS مجاز هستند.".into());
     }
+
     let destination = safe_destination(destination)?;
     let temp = destination.with_extension("part");
+    let existing = fs::metadata(&temp).map(|m| m.len()).unwrap_or(0);
     let client = Client::builder()
         .timeout(Duration::from_secs(3600))
+        .user_agent("LocalAI-Studio/1.0")
         .build()
         .map_err(|e| format!("ساخت کلاینت دانلود ناموفق بود: {e}"))?;
-    let mut response = client
-        .get(url)
+
+    let started = Instant::now();
+    let mut request = client.get(url);
+    if existing > 0 {
+        request = request.header(reqwest::header::RANGE, format!("bytes={existing}-"));
+    }
+    let mut response = request
         .send()
         .and_then(|r| r.error_for_status())
         .map_err(|e| format!("دانلود ناموفق بود: {e}"))?;
 
-    let mut file = File::create(&temp)
-        .map_err(|e| format!("ساخت فایل موقت ناموفق بود: {e}"))?;
+    let resumed = existing > 0 && response.status() == reqwest::StatusCode::PARTIAL_CONTENT;
+    let mut file = if resumed {
+        let mut f = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&temp)
+            .map_err(|e| format!("بازکردن فایل ادامه دانلود ناموفق بود: {e}"))?;
+        f.seek(SeekFrom::End(0)).map_err(|e| format!("تنظیم موقعیت فایل ناموفق بود: {e}"))?;
+        f
+    } else {
+        File::create(&temp).map_err(|e| format!("ساخت فایل موقت ناموفق بود: {e}"))?
+    };
+
     let mut hasher = Sha256::new();
-    let mut total = 0u64;
+    if resumed {
+        let mut prefix = File::open(&temp).map_err(|e| format!("خواندن فایل ادامه دانلود ناموفق بود: {e}"))?;
+        let mut buffer = [0u8; 1024 * 1024];
+        loop {
+            let read = prefix.read(&mut buffer).map_err(|e| format!("محاسبه SHA-256 بخش قبلی ناموفق بود: {e}"))?;
+            if read == 0 { break; }
+            hasher.update(&buffer[..read]);
+        }
+    }
+
+    let mut total = if resumed { existing } else { 0 };
     let mut buffer = [0u8; 1024 * 1024];
     loop {
-        let read = response
-            .read(&mut buffer)
-            .map_err(|e| format!("خواندن دانلود ناموفق بود: {e}"))?;
-        if read == 0 {
-            break;
-        }
-        file.write_all(&buffer[..read])
-            .map_err(|e| format!("نوشتن فایل مدل ناموفق بود: {e}"))?;
+        let read = response.read(&mut buffer).map_err(|e| format!("خواندن دانلود ناموفق بود: {e}"))?;
+        if read == 0 { break; }
+        file.write_all(&buffer[..read]).map_err(|e| format!("نوشتن فایل مدل ناموفق بود: {e}"))?;
         hasher.update(&buffer[..read]);
         total += read as u64;
     }
-    file.flush()
-        .map_err(|e| format!("ثبت فایل دانلود ناموفق بود: {e}"))?;
+    file.flush().map_err(|e| format!("ثبت فایل دانلود ناموفق بود: {e}"))?;
+
     let sha256 = format!("{:x}", hasher.finalize());
     if let Some(expected) = expected_sha256 {
         if !expected.eq_ignore_ascii_case(&sha256) {
-            let _ = fs::remove_file(&temp);
-            return Err(format!(
-                "اعتبارسنجی SHA-256 شکست خورد؛ مقدار دریافت‌شده: {sha256}"
-            ));
+            return Err(format!("اعتبارسنجی SHA-256 شکست خورد؛ مقدار دریافت‌شده: {sha256}"));
         }
     }
-    fs::rename(&temp, &destination)
-        .map_err(|e| format!("ثبت فایل نهایی ناموفق بود: {e}"))?;
+
+    fs::rename(&temp, &destination).map_err(|e| format!("ثبت فایل نهایی ناموفق بود: {e}"))?;
+    let _elapsed = started.elapsed();
     Ok(DownloadResult {
         path: destination.display().to_string(),
         bytes: total,
         sha256,
+        resumed,
     })
 }
