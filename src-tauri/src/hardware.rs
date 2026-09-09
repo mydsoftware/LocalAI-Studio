@@ -103,7 +103,13 @@ pub fn scan() -> HardwareProfile {
     if cfg!(target_os = "macos") && gpus.iter().any(|g| g.vendor == "Apple") {
         accelerators.push("Metal".into());
     }
-    if which::which(if cfg!(target_os = "windows") { "vulkaninfo.exe" } else { "vulkaninfo" }).is_ok() {
+    if which::which(if cfg!(target_os = "windows") {
+        "vulkaninfo.exe"
+    } else {
+        "vulkaninfo"
+    })
+    .is_ok()
+    {
         accelerators.push("Vulkan".into());
     }
     accelerators.push("CPU".into());
