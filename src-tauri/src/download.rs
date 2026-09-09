@@ -24,7 +24,11 @@ fn safe_destination(destination: &Path) -> Result<PathBuf, String> {
     Ok(destination.to_path_buf())
 }
 
-pub fn download(url: &str, destination: &Path, expected_sha256: Option<&str>) -> Result<DownloadResult, String> {
+pub fn download(
+    url: &str,
+    destination: &Path,
+    expected_sha256: Option<&str>,
+) -> Result<DownloadResult, String> {
     if !(url.starts_with("https://") || url.starts_with("http://")) {
         return Err("فقط URLهای HTTP/HTTPS مجاز هستند.".into());
     }
@@ -40,7 +44,8 @@ pub fn download(url: &str, destination: &Path, expected_sha256: Option<&str>) ->
         .and_then(|r| r.error_for_status())
         .map_err(|e| format!("دانلود ناموفق بود: {e}"))?;
 
-    let mut file = File::create(&temp).map_err(|e| format!("ساخت فایل موقت ناموفق بود: {e}"))?;
+    let mut file = File::create(&temp)
+        .map_err(|e| format!("ساخت فایل موقت ناموفق بود: {e}"))?;
     let mut hasher = Sha256::new();
     let mut total = 0u64;
     let mut buffer = [0u8; 1024 * 1024];
@@ -56,15 +61,19 @@ pub fn download(url: &str, destination: &Path, expected_sha256: Option<&str>) ->
         hasher.update(&buffer[..read]);
         total += read as u64;
     }
-    file.flush().map_err(|e| format!("ثبت فایل دانلود ناموفق بود: {e}"))?;
+    file.flush()
+        .map_err(|e| format!("ثبت فایل دانلود ناموفق بود: {e}"))?;
     let sha256 = format!("{:x}", hasher.finalize());
     if let Some(expected) = expected_sha256 {
         if !expected.eq_ignore_ascii_case(&sha256) {
             let _ = fs::remove_file(&temp);
-            return Err(format!("اعتبارسنجی SHA-256 شکست خورد؛ مقدار دریافت‌شده: {sha256}"));
+            return Err(format!(
+                "اعتبارسنجی SHA-256 شکست خورد؛ مقدار دریافت‌شده: {sha256}"
+            ));
         }
     }
-    fs::rename(&temp, &destination).map_err(|e| format!("ثبت فایل نهایی ناموفق بود: {e}"))?;
+    fs::rename(&temp, &destination)
+        .map_err(|e| format!("ثبت فایل نهایی ناموفق بود: {e}"))?;
     Ok(DownloadResult {
         path: destination.display().to_string(),
         bytes: total,
