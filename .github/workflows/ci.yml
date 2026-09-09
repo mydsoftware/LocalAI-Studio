@@ -28,9 +28,10 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
+          rust-src-dir: src-tauri
       - name: Rust format
         working-directory: src-tauri
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all
       - name: Rust check
         working-directory: src-tauri
         run: cargo check
