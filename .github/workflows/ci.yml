@@ -31,10 +31,13 @@ jobs:
           rust-src-dir: src-tauri
       - name: Rust format
         working-directory: src-tauri
-        run: cargo fmt --all
+        run: cargo fmt --all -- --check
       - name: Rust check
         working-directory: src-tauri
         run: cargo check
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --all-targets --all-features
       - name: Rust clippy
         working-directory: src-tauri
         run: cargo clippy --all-targets --all-features -- -D warnings
