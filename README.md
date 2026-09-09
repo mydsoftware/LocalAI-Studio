@@ -13,58 +13,28 @@ LocalAI Studio یک نرم‌افزار دسکتاپ فارسی برای کشف�
 ## مسیر کاربر
 
 ```text
-شروع برنامه
-    ↓
-تشخیص سخت‌افزار
-    ↓
-تحلیل توان سیستم
-    ↓
-جستجوی مدل‌ها
-    ↓
-تحلیل مدل و Variantها
-    ↓
-بررسی سازگاری
-    ↓
-انتخاب Quantization
-    ↓
-انتخاب Runtime
-    ↓
-ساخت برنامه نصب
-    ↓
-دانلود
-    ↓
-اعتبارسنجی
-    ↓
-اجرای مدل
-    ↓
-Benchmark
-    ↓
-تنظیم خودکار
-    ↓
-چت
+شروع برنامه → تشخیص سخت‌افزار → تحلیل توان سیستم → جستجوی مدل‌ها
+→ تحلیل Variantها → بررسی سازگاری → انتخاب Quantization
+→ انتخاب Runtime → نصب → دانلود → اعتبارسنجی
+→ اجرای مدل → Benchmark → تنظیم خودکار → چت
 ```
 
-## ویژگی‌های اصلی
+## قابلیت‌های فعلی
 
-- رابط کاملاً فارسی و RTL
-- تشخیص خودکار سخت‌افزار
-- تحلیل CPU / RAM / GPU / VRAM
-- شناسایی CUDA، ROCm، Vulkan، DirectML و Metal در صورت پشتیبانی سیستم
-- جستجوی مدل‌ها از Hugging Face
-- تحلیل Format و Quantization
-- پیشنهاد هوشمند مدل متناسب با سیستم
-- نصب خودکار Runtime
-- مدیریت دانلود با Pause / Resume / Retry
-- اعتبارسنجی مدل پس از دانلود
-- اجرای مدل بدون نیاز به Terminal
-- چت محلی
-- Benchmark واقعی
-- مانیتورینگ CPU / RAM / GPU / VRAM
-- API سازگار با OpenAI به‌صورت محلی
-- مدیریت چند مدل
-- Import مدل‌های محلی
-- مرکز عیب‌یابی
-- حالت Offline برای اجرای مدل‌های نصب‌شده
+- رابط فارسی و RTL
+- تشخیص CPU / RAM / GPU / VRAM و شتاب‌دهنده‌ها
+- جستجوی واقعی Hugging Face
+- Recommendation و Smart Install Plan
+- دانلود HTTP/HTTPS با SHA-256
+- ادامه دانلود از فایل `.part` در سرویس‌هایی که HTTP Range را پشتیبانی می‌کنند
+- تشخیص و مدیریت Runtimeهای موجود
+- اجرای GGUF با `llama-server`
+- Process Manager برای Start / Stop
+- Chat با API محلی OpenAI-compatible
+- SQLite با WAL و Foreign Keys
+- CI خودکار برای Frontend و Rust
+- تست‌های Rust در CI
+- بسته‌بندی Tauri با آیکون برنامه
 
 ## فناوری
 
@@ -72,59 +42,45 @@ Benchmark
 |---|---|
 | Desktop | Tauri 2 |
 | رابط کاربری | React + TypeScript |
-| طراحی | Tailwind CSS + shadcn/ui |
 | مدیریت وضعیت | Zustand |
 | هسته | Rust |
-| پایگاه داده | SQLite |
-| دسترسی DB | SQLx |
+| پایگاه داده فعلی | SQLite + rusqlite |
 | Runtime اولیه | llama.cpp |
-| منبع مدل | Hugging Face |
-| API | OpenAI-compatible |
-
-## ساختار پروژه
-
-```text
-LocalAI-Studio/
-├── apps/
-│   └── desktop/
-├── packages/
-├── runtimes/
-├── database/
-├── tests/
-├── scripts/
-├── docs/
-├── .github/
-├── AGENTS.md
-├── README.md
-└── LICENSE
-```
+| منبع مدل | Hugging Face Hub API |
+| API | OpenAI-compatible local API |
 
 ## وضعیت توسعه
 
-پروژه در مرحله **Foundation / معماری اولیه** قرار دارد.
+**Foundation و Production Hardening در حال تکمیل است.**
 
-مراحل توسعه:
+مسیر نسخه Production 1.0:
 
-1. پایه پروژه
-2. تشخیص سخت‌افزار
-3. اتصال Hugging Face
-4. هوش مدل و Recommendation
+1. Foundation و CI
+2. Hardware Intelligence
+3. Hugging Face Model Intelligence
+4. Recommendation و Quantization
 5. Download Manager
 6. Runtime Manager
 7. Smart Install
-8. Chat
-9. API محلی
-10. Benchmark
-11. Monitoring
-12. Runtimeهای پیشرفته
-13. قابلیت‌های چندرسانه‌ای
-14. Agent هوشمند
-15. قابلیت‌های Platform
+8. Model Library
+9. Streaming Chat
+10. Local OpenAI API
+11. Benchmark و Monitoring
+12. Recovery و Diagnostics
+13. Cross-platform Packaging
+14. Multimodal Runtimeها
+15. Agent Platform
 
-## اصل مهم
+## اصول مهندسی
 
-تمام مراحل توسعه، UI، مستندات و پیام‌های برنامه فارسی هستند؛ اما اصطلاحات فنی و شناسه‌های برنامه‌نویسی مانند `GGUF`، `CUDA`، `VRAM`، `llama.cpp` و نام مدل‌ها ترجمه نمی‌شوند.
+- هیچ Performance دقیق و ساختگی به کاربر نمایش داده نمی‌شود؛ مقادیر بر اساس سخت‌افزار، metadata یا benchmark واقعی محاسبه می‌شوند.
+- مدل‌ها بدون اعتبارسنجی به حالت Ready منتقل نمی‌شوند.
+- API به‌صورت پیش‌فرض فقط روی localhost در دسترس است.
+- مسیرهای Runtime و فایل‌های مدل اعتبارسنجی می‌شوند.
+- Token، API Key و اطلاعات حساس نباید در Log ثبت شوند.
+- خطاها باید قابل تشخیص و قابل بازیابی باشند و Loop بی‌نهایت مجاز نیست.
+- تمام مراحل توسعه و پیام‌های کاربر فارسی هستند؛ اصطلاحات فنی مانند `GGUF`، `CUDA`، `VRAM` و `llama.cpp` ترجمه نمی‌شوند.
 
 ## مجوز
 
-مجوز پروژه در زمان تثبیت نسخه Production مشخص خواهد شد.
+مجوز پروژه در زمان انتشار Production مشخص خواهد شد.
