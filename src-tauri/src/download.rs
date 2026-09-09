@@ -116,3 +116,33 @@ pub fn download(
         resumed,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_empty_url_scheme() {
+        let result = download("ftp://example.com/model.gguf", Path::new("target/test-model.gguf"), None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn creates_nested_destination_parent() {
+        let root = std::env::temp_dir().join(format!("localai-studio-test-{}", std::process::id()));
+        let path = root.join("nested/model.gguf");
+        let result = safe_destination(&path);
+        assert!(result.is_ok());
+        assert!(path.parent().is_some_and(Path::exists));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn sha256_file_matches_known_content() {
+        let path = std::env::temp_dir().join(format!("localai-sha-{}.bin", std::process::id()));
+        fs::write(&path, b"LocalAI Studio").expect("write test file");
+        let digest = sha256_file(&path).expect("hash test file");
+        assert_eq!(digest, "8f6a1db7fbcf4db1bb5f5d2bb1a3f6b9f7f6e1c2f0d1b3d3b9c6a3b1e8e0c9a0");
+        let _ = fs::remove_file(path);
+    }
+}
