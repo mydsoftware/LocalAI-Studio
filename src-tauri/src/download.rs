@@ -23,18 +23,6 @@ fn safe_destination(destination: &Path) -> Result<PathBuf, String> {
     Ok(destination.to_path_buf())
 }
 
-fn sha256_file(path: &Path) -> Result<String, String> {
-    let mut file = File::open(path).map_err(|e| format!("بازکردن فایل برای اعتبارسنجی ناموفق بود: {e}"))?;
-    let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 1024 * 1024];
-    loop {
-        let read = file.read(&mut buffer).map_err(|e| format!("خواندن فایل برای SHA-256 ناموفق بود: {e}"))?;
-        if read == 0 { break; }
-        hasher.update(&buffer[..read]);
-    }
-    Ok(format!("{:x}", hasher.finalize()))
-}
-
 pub fn download(url: &str, destination: &Path, expected_sha256: Option<&str>) -> Result<DownloadResult, String> {
     if !(url.starts_with("https://") || url.starts_with("http://")) {
         return Err("فقط URLهای HTTP/HTTPS مجاز هستند.".into());
@@ -102,13 +90,5 @@ mod tests {
         assert!(result.is_ok());
         assert!(path.parent().is_some_and(Path::exists));
         let _ = fs::remove_dir_all(root);
-    }
-    #[test]
-    fn sha256_file_matches_known_content() {
-        let path = std::env::temp_dir().join(format!("localai-sha-{}.bin", std::process::id()));
-        fs::write(&path, b"LocalAI Studio").expect("write test file");
-        let digest = sha256_file(&path).expect("hash test file");
-        assert_eq!(digest, "7a793092d5a68be2fde4e61083363c7d5c1aa4ebb5377e9877d8fa1022cc0777");
-        let _ = fs::remove_file(path);
     }
 }
