@@ -157,7 +157,7 @@ fn stop_model(model_path: String, state: State<AppState>) -> Result<bool, String
     let mut running = state
         .running
         .lock()
-        .map_err(|_| "قفل Process Manager lock broken.".to_string())?;
+        .map_err(|_| "قفل Process Manager خراب است.".to_string())?;
     if let Some(mut child) = running.remove(&id) {
         runtime::stop_child(&mut child)?;
         return Ok(true);
