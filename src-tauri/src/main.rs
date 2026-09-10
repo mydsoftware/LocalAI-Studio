@@ -59,10 +59,7 @@ fn search_models(
 }
 
 #[tauri::command]
-fn recommend_model(
-    model_id: String,
-    variant_id: String,
-) -> Option<recommendation::Recommendation> {
+fn recommend_model(model_id: String, variant_id: String) -> Option<recommendation::Recommendation> {
     let hw = hardware::scan();
     let model = models::catalog().into_iter().find(|m| m.id == model_id)?;
     let variant = model.variants.iter().find(|v| v.id == variant_id)?;
@@ -93,7 +90,11 @@ fn download_model(
     destination: String,
     expected_sha256: Option<String>,
 ) -> Result<download::DownloadResult, String> {
-    download::download(&url, &PathBuf::from(destination), expected_sha256.as_deref())
+    download::download(
+        &url,
+        &PathBuf::from(destination),
+        expected_sha256.as_deref(),
+    )
 }
 
 #[tauri::command]
@@ -156,7 +157,7 @@ fn stop_model(model_path: String, state: State<AppState>) -> Result<bool, String
     let mut running = state
         .running
         .lock()
-        .map_err(|_| "قفل Process Manager خراب است.".to_string())?;
+        .map_err(|_| "قفل Process Manager lock broken.".to_string())?;
     if let Some(mut child) = running.remove(&id) {
         runtime::stop_child(&mut child)?;
         return Ok(true);
