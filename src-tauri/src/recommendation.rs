@@ -42,7 +42,11 @@ pub fn recommend(
     };
 
     let hardware = clamp_score((ram_ratio.min(1.0) * 70.0) + (vram_ratio.min(1.0) * 30.0));
-    let runtime = if variant.format.eq_ignore_ascii_case("GGUF") { 100.0 } else { 35.0 };
+    let runtime = if variant.format.eq_ignore_ascii_case("GGUF") {
+        100.0
+    } else {
+        35.0
+    };
     let performance = if gpu_possible {
         clamp_score(55.0 + vram_ratio.min(1.0) * 45.0)
     } else {
@@ -56,9 +60,14 @@ pub fn recommend(
         q if q.starts_with("Q2") => 58.0,
         _ => 75.0,
     };
-    let task = if model.task.is_empty() || model.task == "عمومی" { 75.0 } else { 90.0 };
+    let task = if model.task.is_empty() || model.task == "عمومی" {
+        75.0
+    } else {
+        90.0
+    };
 
-    let total = hardware * 0.30 + performance * 0.25 + quality * 0.20 + task * 0.15 + runtime * 0.10;
+    let total =
+        hardware * 0.30 + performance * 0.25 + quality * 0.20 + task * 0.15 + runtime * 0.10;
     let score = total.round().clamp(0.0, 100.0) as u8;
 
     let compatibility = if ram_ratio < 0.75 {
@@ -93,7 +102,10 @@ pub fn recommend(
 
     let mut warnings = Vec::new();
     if ram_ratio < 1.0 {
-        warnings.push("RAM آزاد فعلی برای حاشیه امن این Variant کافی نیست؛ Quantization سبک‌تر پیشنهاد می‌شود.".into());
+        warnings.push(
+            "RAM آزاد فعلی برای حاشیه امن این Variant کافی نیست؛ Quantization سبک‌تر پیشنهاد می‌شود."
+                .into(),
+        );
     }
     if gpu_possible && vram_ratio < 1.0 {
         warnings.push("کل مدل در VRAM جا نمی‌شود؛ اجرای Hybrid CPU/GPU محتمل است.".into());
