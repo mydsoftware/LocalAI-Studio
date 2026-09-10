@@ -78,9 +78,9 @@ pub fn search_huggingface(query: &str, limit: usize) -> Result<Vec<ModelDescript
         .into_iter()
         .map(|m| {
             let name = m.id.rsplit('/').next().unwrap_or(&m.id).to_string();
-            let author = m.author.unwrap_or_else(|| {
-                m.id.split('/').next().unwrap_or("نامشخص").to_string()
-            });
+            let author = m
+                .author
+                .unwrap_or_else(|| m.id.split('/').next().unwrap_or("نامشخص").to_string());
             ModelDescriptor {
                 id: m.id,
                 name,
