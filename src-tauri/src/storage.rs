@@ -79,7 +79,7 @@ pub fn initialize(path: &Path) -> Result<()> {
            peak_ram INTEGER,
            peak_vram INTEGER,
            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-         );"
+         );",
     )?;
     Ok(())
 }
