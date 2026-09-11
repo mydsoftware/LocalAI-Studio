@@ -128,10 +128,8 @@ mod tests {
 
     #[test]
     fn creates_nested_destination_parent() {
-        let root = std::env::temp_dir().join(format!(
-            "localai-studio-test-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("localai-studio-test-{}", std::process::id()));
         let path = root.join("nested/model.gguf");
         let result = safe_destination(&path);
         assert!(result.is_ok());
